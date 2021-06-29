@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <small id = "status">   </small>
+    <script  src = "http://localhost:8080/socket.io/socket.io.js" > </script> 
+    <h1>  Chat application   </h1>
+    <small id = "status" >   </small>
+    <input placeholder="Enter your name" id = "name" />
+    <br> </br>
+    <input placeholder="type your message" id = "message" />
+    <br> </br>
+    <button onclick="SendMessage()" > send message </button>
+    <div id = "messages"   >   </div>
+    <script>    
+       
+       const clientSocket =   io()
+
+       var msgID = 0
+
+       clientSocket.on("connect" , () => {
+          fetch("http://localhost:8080/getchats")
+          .then( res => { return res.json()   } )
+          .then( res => {
+              console.log(res)
+              res.map( (data, index) => {
+                msgID++
+                  document.getElementById("messages").innerHTML += ` <p> <b> ${data.name == document.getElementById("name").value ? `You` : data.name  }   </b>  : <span id = "${msgID}" >  ${data.message}  </span> 
+                
+                ${data.name == document.getElementById("name").value ?  `
+                <button id ="delete"  onclick = "deleteMessage(${msgID})"  >  delete message  </button> 
+                <input placeholder = "update message" id = "update"  />
+                 <button onclick = "updateMessage(${msgID})" > update message  </button>`  : ` `  }
+                
+                </p>   `
+
+              }  )
+          }  )
+       } )
+
+       
+
+       clientSocket.on("message" , (msg) => {
+           console.log(name)
+           msgID++
+            document.getElementById("messages").innerHTML += ` <p> <b> ${msg.name == document.getElementById("name").value ? `You` : msg.name  }   </b>  : <span id = "${msgID}" >  ${msg.message}  </span> 
+                
+                ${msg.name == document.getElementById("name").value ?  `
+                <button id ="delete"  onclick = "deleteMessage(${msgID})"  >  delete message  </button> 
+                <input placeholder = "update message" id = "update"  />
+                 <button onclick = "updateMessage(${msgID})" > update message  </button>`  : ` `  }
+                
+                </p>   `
+                
+       } )
+
+       clientSocket.on("update" , (update) => {
+        //    console.log("Called in update0" ,  )
+            document.getElementById("" + update.id).innerText = update.message
+       } )
+
+       clientSocket.on("delete" , (id) => {
+            document.getElementById(id).innerText = ""
+       }  )
+
+       function updateMessage(id){
+           
+            clientSocket.emit("update" , { id ,  message : document.getElementById("update").value } )
+            document.getElementById("update").value = ""
+       }
+
+       function deleteMessage(id){
+           console.log(`called`)
+            clientSocket.emit("delete" , id )
+       }
+
+       function SendMessage(){
+
+        fetch(`http://localhost:8080/savemessage`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ name : document.getElementById("name").value , message : document.getElementById("message").value })
+  })
+    .then(response => {
+      return response.json();
+    })
+    .catch(err => console.log(err));
+
+
+       clientSocket.emit( "message" , { name : document.getElementById("name").value , message : document.getElementById("message").value } );
+       document.getElementById("message").value = ``
+
+       }
+
+    </script>
+</body>
+</html>
