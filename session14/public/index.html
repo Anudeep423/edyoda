@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Chat Application</h1>
+
+    <div id ="status" >  </div>
+    <br> </br>
+    <input placeholder="Enter your name" id = "name"  />
+    <br> </br>
+    <input placeholder="type your message" id = "message" />
+    <br> </br>
+    <button  onclick="OnClick()" >Send message</button>
+    <p>Messages </p>
+    <div id = "messages" >  </div>
+    <script src = "http://localhost:8080/socket.io/socket.io.js" >  </script>
+    <script>
+      const socket =  io();
+
+      socket.on("status" , (msg) => {
+        document.getElementById("status").innerHTML += `${msg} <br> </br> `
+      } )
+
+      socket.on("connect" , () => {
+          console.log(`hello`)
+      } )
+
+      socket.on("disconnect" , () => {
+          socket.emit(`message` , "user disconnected" )
+      } )
+
+      var msgID = 0
+
+      socket.on("message" , (serverMsg) => {
+          if(serverMsg.name == document.getElementById("name").value ){
+          document.getElementById("messages").innerHTML += ` <p    >  <b   > <span id = "name" > You  <span> </b>  :  <span id = "${msgID}" > ${serverMsg.message} </span>
+             <button onclick = "Deletemsg(${msgID})"  > delete message </button> 
+             <input id = "update${msgID}"  placeholder ="update your message" />
+              <button onclick = "UpdateMessage(${msgID})"  > update message </button>    <p> `
+            msgID++
+          }else{
+          document.getElementById("messages").innerHTML += ` <p  > <b> ${serverMsg.name} </b> : <span id = "${msgID}" >   ${serverMsg.message} </span> 
+            <button onclick = "Deletemsg(${msgID})"  > delete message </button>  <p> `
+            msgID++
+          }
+      }  )
+
+      socket.on("deletemessage" , (id) => {console.log(`called`)
+        document.getElementById(id).innerText = ``
+    } )
+
+    socket.on("updatemessage" , (id,updatedMessage) => {
+        // console.log(document.getElementById(id).innerText , document.getElementById( "update"+id)   )
+        console.log(updatedMessage)
+        document.getElementById(id).innerText = updatedMessage
+        console.log(document.getElementById("name").innerHTML)
+        if(document.getElementById("name")){
+        document.getElementById("update"+id).value  = ""  
+        }
+
+    } )
+
+    function UpdateMessage(updateMSg){
+        console.log("updatemessagecalled"  ,  document.getElementById("update"+updateMSg).value , "update"+updateMSg )
+       socket.emit("updatemessage" , updateMSg , document.getElementById("update"+updateMSg).value  )
+
+    }
+
+      function Deletemsg(id){
+        //   console.log(`called in delete msg ${id} `  )
+        //   document.getElementById(id).innerHTML = ``
+        socket.emit("deletemsg" , id )
+      }
+
+       function OnClick(){
+        socket.emit("message" , { name : document.getElementById("name").value , message : document.getElementById("message").value  }  )
+        
+        }
+    </script>
+</body>
+</html>
